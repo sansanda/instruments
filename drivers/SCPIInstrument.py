@@ -214,6 +214,16 @@ class SCPIInstrument:
         """Resetea el instrumento (*RST)."""
         self.write("*RST")
 
+    def trigger(self):
+        """
+        Genera un trigger immediato en el instrumento.
+        Muchos equipos lo interpretan como ejecuta ahora la acción
+        armada/preparada. Por ejemplo, INIT -> *TRG
+        Algunos instrumentos pueden ignorar *TRG si no estan armados (INIT).
+        Secuencia típìca: CONFIGURE -> INIT -> WAIT FOR TRIGGER -> *TRG -> MEASURE -> FETCH
+        """
+        self.write("*TRG")
+
     def clear(self):
         """Clear all messages from Error Queue (*CLS)."""
         self.write("*CLS")
