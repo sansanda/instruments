@@ -1,4 +1,4 @@
-from logger_and_messages.printing_messages import printMessage
+from logger_and_messages.printing_messages import print_message
 import numpy as np
 import abc
 
@@ -24,7 +24,7 @@ class FakeThermometer(Thermometer_I):
         self.sigma = sigma
 
     def read_temperature(self):
-        printMessage("Reading Temperature....", "*", "*")
+        print_message("Reading Temperature....", "*", "*")
         return float(np.random.normal(self.mu, self.sigma, 1))
 
     def plug_transducer(self, transducer='4WRTD', channel=0):

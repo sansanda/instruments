@@ -1,8 +1,8 @@
 from termcolor import colored
 
-def printMessage(message, headerStr, footerStr):
+def print_message(message:str = "", header:str = "", footer:str = ""):
     print("\n")
-    print(colored(len(message) * headerStr, "magenta"))
+    print(colored(len(message) * header, "magenta"))
     print(colored(message, "magenta"))
-    print(colored(len(message) * footerStr, "magenta"))
+    print(colored(len(message) * footer, "magenta"))
     print("\n")

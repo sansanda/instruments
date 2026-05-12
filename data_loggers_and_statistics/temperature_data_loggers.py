@@ -1,10 +1,8 @@
-from queue import Queue
 from threading import Thread, Event
 from time import sleep
 
-from data_structures.Observable_List import Observable_List
-from logger_and_messages.printing_messages import printMessage
-from temperature.Thermometers import Thermometer_I
+from logger_and_messages.printing_messages import print_message
+from drivers.thermometers.Thermometers import Thermometer_I
 
 import abc
 
@@ -71,7 +69,7 @@ class TemperatureDataLogger(Temperature_Data_Logger_I, Thread):
         return self.sampling_period
 
     def run(self):
-        printMessage("Starting Temperature Data Logger...", "*", "*")
+        print_message("Starting Temperature Data Logger...", "*", "*")
         while True:
             self.can_run.wait()
             for buffer in self.sampling_buffers:

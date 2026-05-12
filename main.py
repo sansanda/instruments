@@ -1,8 +1,8 @@
 from data_loggers_and_statistics.temperature_data_loggers import TemperatureDataLogger
 from data_structures.Observable_List import Observable_List
-from delays.delay import Time_Delay, Delay_I, Delay_Factory
-from tCal.TCal import TCal
-from ovens.Ovens import FakeOven
+from delays.delay import Delay_Factory
+from others.TCal import TCal
+from drivers.ovens.Ovens import FakeOven
 import sys
 
 

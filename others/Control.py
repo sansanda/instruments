@@ -1,6 +1,6 @@
 from threading import Thread
 
-from logger_and_messages.printing_messages import printMessage
+from logger_and_messages.printing_messages import print_message
 
 import abc
 

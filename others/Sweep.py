@@ -1,11 +1,8 @@
-from threading import Thread
-
-from logger_and_messages.printing_messages import printMessage
+from logger_and_messages.printing_messages import print_message
 
 import abc
 
-from ovens.Ovens import Oven_I
-from temperature.Control import Control_I
+from others.Control import Control_I
 
 class Sweep_I(metaclass=abc.ABCMeta):
     @classmethod
@@ -49,7 +46,7 @@ class Tempearture_Sweep(Sweep_I):
         self.control = control
 
     def start(self):
-        printMessage("Starting Temperature Sweep from Zero", "*", "*")
+        print_message("Starting Temperature Sweep from Zero", "*", "*")
         self.reset()
         self.oven.update_temperatureSP(self.temperature_profile[self.temperature_profile_index])
         self.control.start()

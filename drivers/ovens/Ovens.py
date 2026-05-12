@@ -2,8 +2,8 @@ import sys
 from threading import Thread
 from time import sleep
 
-from logger_and_messages.printing_messages import printMessage
-from temperature.Thermometers import Thermometer_I
+from logger_and_messages.printing_messages import print_message
+from drivers.thermometers.Thermometers import Thermometer_I
 
 import abc
 
@@ -45,7 +45,7 @@ class FakeOven(Oven_I, Thermometer_I, Thread):
         Thread.__init__(self, name=threadname)
 
     def run(self):
-        printMessage("Starting Fake Oven","*","*")
+        print_message("Starting Fake Oven", "*", "*")
         while True:
             #printMessage("Updating oven state....", "*", "*")
             sleep(self.period_secs)
