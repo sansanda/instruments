@@ -1,0 +1,23 @@
+from ..drivers.thermometers.Thermometers import Thermometer_I
+
+class FakeThermometer(Thermometer_I):
+    """A concrete thermometer"""
+
+    def __init__(self, mu, sigma):
+        self.mu = mu
+        self.sigma = sigma
+
+    def read_temperature(self):
+        print_message("Reading Temperature....", "*", "*")
+        return float(np.random.normal(self.mu, self.sigma, 1))
+
+    def plug_transducer(self, transducer='4WRTD', channel=0):
+        self.temp_transducer = transducer
+        self.channel = channel
+
+    def updateParameters(self,mu, sigma):
+        self.mu = mu
+        self.sigma = sigma
+
+    def getParameters(self):
+        return (self.mu, self.sigma)
