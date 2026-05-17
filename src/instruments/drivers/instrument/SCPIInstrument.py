@@ -2,7 +2,7 @@ import pyvisa
 from pyvisa import Resource
 from abc import ABC, abstractmethod
 
-from src.instruments.interfaces.interfaces import (
+from instruments.interfaces.interfaces import (
     SCPIInstrumentInterface
 )
 

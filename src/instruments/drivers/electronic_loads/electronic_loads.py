@@ -48,15 +48,12 @@ Modo potencia constante:
 >>> load.power = 120
 """
 
-from src.instruments.interfaces.interfaces import (
+from instruments.interfaces.interfaces import (
     ElectronicLoadInterface
 )
 
-from ..sources.source_instrument import SourceInstrument
-
 
 class HPElectronicLoad6060B(
-    SourceInstrument,
     ElectronicLoadInterface
 ):
     """

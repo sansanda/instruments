@@ -1,54 +1,60 @@
-from ..drivers.electronic_loads.electronic_loads import (
-    HPElectronicLoad6060B,
+from instruments.interfaces.interfaces import (
     ElectronicLoadInterface
 )
 
-
 class FakeHPElectronicLoad6060B(
-    ElectronicLoadInterface,
-    HPElectronicLoad6060B
+    ElectronicLoadInterface
 ):
     """
-    Fake instrument para HP 6060B.
+    Simulador de carga electrónica HP 6060B.
 
-    Esta clase simula el comportamiento interno de la carga
-    electrónica HP / Agilent 6060B sin necesidad de hardware
-    real ni comunicación VISA.
-
-    Diseñada para:
-    - Tests unitarios
-    - Tests de integración
-    - Desarrollo offline
-    - Simulación SCPI
-
-    Características
-    ---------------
-    - Mantiene estado interno
-    - Simula respuestas SCPI
-    - Guarda comandos enviados
-    - Valida parámetros
-    - Simula medidas
+    Diseñado para:
+    - testing,
+    - desarrollo offline,
+    - integración continua,
+    - simulación básica.
 
     Notes
     -----
-    No llama al constructor VISA real para evitar acceso
-    a hardware físico.
+    Este fake NO implementa:
+    - VISA,
+    - SCPI real,
+    - timing real,
+    - comportamiento físico avanzado.
 
-    Examples
-    --------
-    >>> load = FakeHPElectronicLoad6060B()
-
-    >>> load.configure_cc(
-    ...     current=5,
-    ...     current_range=60
-    ... )
-
-    >>> print(load.current)
-    5
-
-    >>> print(load.commands)
-    ['MODE CURR', 'CURR:RANG 60', 'CURR 5']
+    Simula únicamente:
+    - almacenamiento de configuración,
+    - medidas simples derivadas,
+    - estados internos.
     """
+
+    # =========================================================
+    # CONSTANTS
+    # =========================================================
+
+    MODE_CC = "CURR"
+    MODE_CV = "VOLT"
+    MODE_CR = "RES"
+    MODE_CP = "POW"
+
+    VALID_MODES = [
+        MODE_CC,
+        MODE_CV,
+        MODE_CR,
+        MODE_CP
+    ]
+
+    TRIGGER_BUS = "BUS"
+    TRIGGER_IMMEDIATE = "IMM"
+    TRIGGER_EXTERNAL = "EXT"
+
+    VALID_TRIGGER_SOURCES = [
+        TRIGGER_BUS,
+        TRIGGER_IMMEDIATE,
+        TRIGGER_EXTERNAL
+    ]
+
+    VALID_CURRENT_RANGES = [6, 60]
 
     # =========================================================
     # INIT
@@ -56,608 +62,315 @@ class FakeHPElectronicLoad6060B(
 
     def __init__(self):
         """
-        Inicializa el fake instrument.
-
-        Se crean variables internas para almacenar el estado
-        simulado del instrumento.
-
-        Examples
-        --------
-        >>> load = FakeHPElectronicLoad6060B()
+        Inicializa fake electronic load.
         """
 
-        # NO llamar super().__init__()
-        # para evitar VISA real
+        self._connected = True
+
+        self._output_enabled = False
 
         self._mode = self.MODE_CC
 
         self._current = 0.0
+
         self._voltage = 0.0
+
         self._power = 0.0
+
         self._resistance = 1.0
 
         self._current_range = 60
 
         self._current_slew_rate = 1.0
 
-        self._trigger_source = self.TRIGGER_BUS
-
-        self._input_enabled = False
-
-        self._measured_voltage = 0.0
-        self._measured_current = 0.0
-        self._measured_power = 0.0
-
-        self.commands = []
+        self._trigger_source = (
+            self.TRIGGER_BUS
+        )
 
     # =========================================================
-    # LOW LEVEL SCPI
+    # CONNECTION
     # =========================================================
 
-    def write(self, command: str):
-        """
-        Simula escritura SCPI.
+    @property
+    def connected(self) -> bool:
 
-        Parameters
-        ----------
-        command : str
-            Comando SCPI enviado.
+        return self._connected
 
-        Notes
-        -----
-        El comando queda almacenado en `commands`.
+    def connect(self):
 
-        Examples
-        --------
-        >>> load.write("CURR 5")
-        """
+        self._connected = True
 
-        self.commands.append(command)
+    def disconnect(self):
 
-    def query(self, command: str) -> str:
-        """
-        Simula consulta SCPI de texto.
+        self._connected = False
 
-        Parameters
-        ----------
-        command : str
-            Consulta SCPI.
+    # =========================================================
+    # IDENTIFICATION
+    # =========================================================
 
-        Returns
-        -------
-        str
-            Respuesta simulada.
+    def idn(self) -> str:
 
-        Examples
-        --------
-        >>> mode = load.query("MODE?")
-        """
+        return (
+            "HEWLETT-PACKARD,"
+            "6060B,"
+            "FAKE0001,"
+            "1.0"
+        )
 
-        self.commands.append(command)
+    # =========================================================
+    # RESET
+    # =========================================================
 
-        mapping = {
-            "MODE?": self._mode,
-            "TRIG:SOUR?": self._trigger_source
-        }
+    def reset(self):
 
-        return mapping.get(command, "")
+        self.set_default_configuration()
 
-    def query_float(self, command: str) -> float:
-        """
-        Simula consulta SCPI numérica.
+    # =========================================================
+    # OUTPUT
+    # =========================================================
 
-        Parameters
-        ----------
-        command : str
-            Consulta SCPI.
+    @property
+    def output_enabled(self) -> bool:
 
-        Returns
-        -------
-        float
-            Valor numérico simulado.
+        return self._output_enabled
 
-        Examples
-        --------
-        >>> current = load.query_float("CURR?")
-        """
+    @output_enabled.setter
+    def output_enabled(
+            self,
+            value: bool
+    ):
 
-        self.commands.append(command)
+        self._output_enabled = bool(value)
 
-        mapping = {
-            "CURR?": self._current,
-            "VOLT?": self._voltage,
-            "POW?": self._power,
-            "RES?": self._resistance,
-            "CURR:RANG?": self._current_range,
-            "CURR:SLEW?": self._current_slew_rate,
-            "MEAS:VOLT?": self._measured_voltage,
-            "MEAS:CURR?": self._measured_current,
-            "MEAS:POW?": self._measured_power
-        }
+    def output_on(self):
 
-        return mapping.get(command, 0.0)
+        self.output_enabled = True
+
+    def output_off(self):
+
+        self.output_enabled = False
 
     # =========================================================
     # MODE
     # =========================================================
 
     @property
-    def mode(self):
-        """
-        Modo de funcionamiento actual.
-
-        Returns
-        -------
-        str
-            Modo SCPI actual.
-
-        Examples
-        --------
-        >>> print(load.mode)
-        CURR
-        """
+    def mode(self) -> str:
 
         return self._mode
 
     @mode.setter
-    def mode(self, value):
-        """
-        Configura modo de funcionamiento.
-
-        Parameters
-        ----------
-        value : str
-            Modo SCPI.
-
-        Valores válidos
-        ----------------
-        - CURR
-        - VOLT
-        - RES
-        - POW
-
-        Examples
-        --------
-        >>> load.mode = load.MODE_CC
-        """
+    def mode(self, value: str):
 
         value = value.upper()
 
         if value not in self.VALID_MODES:
+
             raise ValueError(
                 f"Invalid mode: {value}"
             )
 
         self._mode = value
 
-        self.write(f"MODE {value}")
-
     # =========================================================
     # CURRENT
     # =========================================================
 
     @property
-    def current(self):
-        """
-        Corriente programada.
-
-        Returns
-        -------
-        float
-            Corriente en amperios.
-        """
+    def current(self) -> float:
 
         return self._current
 
     @current.setter
-    def current(self, value):
-        """
-        Configura corriente.
+    def current(self, value: float):
 
-        Parameters
-        ----------
-        value : float
-            Corriente en amperios.
-
-        Examples
-        --------
-        >>> load.current = 5
-        """
-
-        self._current = value
-
-        self.write(f"CURR {value}")
+        self._current = float(value)
 
     # =========================================================
     # VOLTAGE
     # =========================================================
 
     @property
-    def voltage(self):
-        """
-        Voltaje programado.
-
-        Returns
-        -------
-        float
-            Voltaje en voltios.
-        """
+    def voltage(self) -> float:
 
         return self._voltage
 
     @voltage.setter
-    def voltage(self, value):
-        """
-        Configura voltaje.
+    def voltage(self, value: float):
 
-        Parameters
-        ----------
-        value : float
-            Voltaje en voltios.
-
-        Examples
-        --------
-        >>> load.voltage = 12
-        """
-
-        self._voltage = value
-
-        self.write(f"VOLT {value}")
+        self._voltage = float(value)
 
     # =========================================================
     # POWER
     # =========================================================
 
     @property
-    def power(self):
-        """
-        Potencia programada.
-
-        Returns
-        -------
-        float
-            Potencia en vatios.
-        """
+    def power(self) -> float:
 
         return self._power
 
     @power.setter
-    def power(self, value):
-        """
-        Configura potencia.
+    def power(self, value: float):
 
-        Parameters
-        ----------
-        value : float
-            Potencia en vatios.
-
-        Examples
-        --------
-        >>> load.power = 100
-        """
-
-        self._power = value
-
-        self.write(f"POW {value}")
+        self._power = float(value)
 
     # =========================================================
     # RESISTANCE
     # =========================================================
 
     @property
-    def resistance(self):
-        """
-        Resistencia programada.
-
-        Returns
-        -------
-        float
-            Resistencia en ohmios.
-        """
+    def resistance(self) -> float:
 
         return self._resistance
 
     @resistance.setter
-    def resistance(self, value):
-        """
-        Configura resistencia.
+    def resistance(self, value: float):
 
-        Parameters
-        ----------
-        value : float
-            Resistencia en ohmios.
-
-        Examples
-        --------
-        >>> load.resistance = 10
-        """
-
-        self._resistance = value
-
-        self.write(f"RES {value}")
+        self._resistance = float(value)
 
     # =========================================================
     # CURRENT RANGE
     # =========================================================
 
     @property
-    def current_range(self):
-        """
-        Rango de corriente activo.
-
-        Returns
-        -------
-        int
-            Rango de corriente.
-        """
+    def current_range(self) -> float:
 
         return self._current_range
 
     @current_range.setter
-    def current_range(self, value):
-        """
-        Configura rango de corriente.
-
-        Parameters
-        ----------
-        value : int
-            Rango deseado.
-
-        Valores válidos
-        ----------------
-        - 6
-        - 60
-
-        Examples
-        --------
-        >>> load.current_range = 60
-        """
+    def current_range(self, value: int):
 
         if value not in self.VALID_CURRENT_RANGES:
+
             raise ValueError(
                 f"Invalid current range: {value}"
             )
 
         self._current_range = value
 
-        self.write(f"CURR:RANG {value}")
-
     # =========================================================
     # CURRENT SLEW RATE
     # =========================================================
 
     @property
-    def current_slew_rate(self):
-        """
-        Slew rate de corriente.
-
-        Returns
-        -------
-        float
-            Slew rate en A/us.
-        """
+    def current_slew_rate(self) -> float:
 
         return self._current_slew_rate
 
     @current_slew_rate.setter
-    def current_slew_rate(self, value):
-        """
-        Configura slew rate.
+    def current_slew_rate(
+            self,
+            value: float
+    ):
 
-        Parameters
-        ----------
-        value : float
-            Slew rate en A/us.
-
-        Examples
-        --------
-        >>> load.current_slew_rate = 2.0
-        """
-
-        self._current_slew_rate = value
-
-        self.write(f"CURR:SLEW {value}")
+        self._current_slew_rate = float(value)
 
     # =========================================================
     # TRIGGER SOURCE
     # =========================================================
 
     @property
-    def trigger_source(self):
-        """
-        Fuente de trigger actual.
-
-        Returns
-        -------
-        str
-            Fuente de trigger.
-        """
+    def trigger_source(self) -> str:
 
         return self._trigger_source
 
     @trigger_source.setter
-    def trigger_source(self, value):
-        """
-        Configura fuente de trigger.
-
-        Parameters
-        ----------
-        value : str
-            Fuente de trigger.
-
-        Valores válidos
-        ----------------
-        - BUS
-        - IMM
-        - EXT
-
-        Examples
-        --------
-        >>> load.trigger_source = load.TRIGGER_BUS
-        """
+    def trigger_source(self, value: str):
 
         value = value.upper()
 
-        if value not in self.VALID_TRIGGER_SOURCES:
+        if value not in (
+                self.VALID_TRIGGER_SOURCES
+        ):
+
             raise ValueError(
                 f"Invalid trigger source: {value}"
             )
 
         self._trigger_source = value
 
-        self.write(f"TRIG:SOUR {value}")
-
-    # =========================================================
-    # INPUT
-    # =========================================================
-
-    @property
-    def input_enabled(self):
-        """
-        Estado del input.
-
-        Returns
-        -------
-        bool
-            True si el input está activo.
-        """
-
-        return self._input_enabled
-
-    @input_enabled.setter
-    def input_enabled(self, value):
-        """
-        Activa o desactiva el input.
-
-        Parameters
-        ----------
-        value : bool
-            Estado deseado.
-
-        Examples
-        --------
-        >>> load.input_enabled = True
-        """
-
-        self._input_enabled = bool(value)
-
-        command = "INPUT ON" if value else "INPUT OFF"
-
-        self.write(command)
-
     # =========================================================
     # MEASUREMENTS
     # =========================================================
 
     @property
-    def measured_voltage(self):
-        """
-        Voltaje medido.
+    def measured_voltage(self) -> float:
 
-        Returns
-        -------
-        float
-            Voltaje medido en voltios.
-        """
-
-        return self._measured_voltage
+        return self._voltage
 
     @property
-    def measured_current(self):
-        """
-        Corriente medida.
+    def measured_current(self) -> float:
 
-        Returns
-        -------
-        float
-            Corriente medida en amperios.
-        """
-
-        return self._measured_current
+        return self._current
 
     @property
-    def measured_power(self):
-        """
-        Potencia medida.
+    def measured_power(self) -> float:
 
-        Returns
-        -------
-        float
-            Potencia medida en vatios.
-        """
-
-        return self._measured_power
+        return (
+            self._voltage
+            * self._current
+        )
 
     # =========================================================
-    # TEST HELPERS
+    # QUICK CONFIGURATION
     # =========================================================
 
-    def set_measurements(
+    def configure_cc(
             self,
-            voltage: float,
             current: float,
+            current_range: int = 60
+    ):
+
+        self.mode = self.MODE_CC
+
+        self.current_range = current_range
+
+        self.current = current
+
+    def configure_cv(
+            self,
+            voltage: float
+    ):
+
+        self.mode = self.MODE_CV
+
+        self.voltage = voltage
+
+    def configure_cr(
+            self,
+            resistance: float
+    ):
+
+        self.mode = self.MODE_CR
+
+        self.resistance = resistance
+
+    def configure_cp(
+            self,
             power: float
     ):
-        """
-        Configura medidas simuladas.
 
-        Parameters
-        ----------
-        voltage : float
-            Voltaje simulado.
+        self.mode = self.MODE_CP
 
-        current : float
-            Corriente simulada.
-
-        power : float
-            Potencia simulada.
-
-        Examples
-        --------
-        >>> load.set_measurements(
-        ...     voltage=12,
-        ...     current=5,
-        ...     power=60
-        ... )
-        """
-
-        self._measured_voltage = voltage
-        self._measured_current = current
-        self._measured_power = power
+        self.power = power
 
     # =========================================================
     # UTILITIES
     # =========================================================
 
-    def trigger(self):
-        """
-        Simula trigger manual.
+    def set_default_configuration(
+            self,
+            current_range: int = 60,
+            slew_rate: float = 1.0,
+            current: float = 0.0
+    ):
 
-        Examples
-        --------
-        >>> load.trigger()
-        """
+        self.mode = self.MODE_CC
 
-        self.write("*TRG")
+        self.current_range = current_range
 
-    def reset(self):
-        """
-        Simula reset del instrumento.
+        self.current_slew_rate = slew_rate
 
-        Examples
-        --------
-        >>> load.reset()
-        """
+        self.current = current
 
-        self.write("*RST")
-
-    def clear(self):
-        """
-        Simula clear del instrumento.
-
-        Examples
-        --------
-        >>> load.clear()
-        """
-
-        self.write("*CLS")
+        self.output_enabled = False
